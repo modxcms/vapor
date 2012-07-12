@@ -154,13 +154,13 @@ try {
         foreach ($extPackages as $extPkgKey => $extPackage) {
             if (!empty($extPackage['path'])) {
                 if (strpos($extPackage['path'], MODX_CORE_PATH) === 0) {
-                    $extPackages[$extPkgKey]['path'] = str_replace(MODX_CORE_PATH, '[[++core_path]]', $extPackage['path'], 1);
+                    $extPackages[$extPkgKey]['path'] = str_replace(MODX_CORE_PATH, '[[++core_path]]', $extPackage['path']);
                 } elseif (strpos($extPackage['path'], $modx->getOption('assets_path', $options, MODX_ASSETS_PATH)) === 0) {
-                    $extPackages[$extPkgKey]['path'] = str_replace($modx->getOption('assets_path', $options, MODX_ASSETS_PATH), '[[++assets_path]]', $extPackage['path'], 1);
+                    $extPackages[$extPkgKey]['path'] = str_replace($modx->getOption('assets_path', $options, MODX_ASSETS_PATH), '[[++assets_path]]', $extPackage['path']);
                 } elseif (strpos($extPackage['path'], $modx->getOption('manager_path', $options, MODX_MANAGER_PATH)) === 0) {
-                    $extPackages[$extPkgKey]['path'] = str_replace($modx->getOption('manager_path', $options, MODX_MANAGER_PATH), '[[++manager_path]]', $extPackage['path'], 1);
+                    $extPackages[$extPkgKey]['path'] = str_replace($modx->getOption('manager_path', $options, MODX_MANAGER_PATH), '[[++manager_path]]', $extPackage['path']);
                 } elseif (strpos($extPackage['path'], $modx->getOption('base_path', $options, MODX_BASE_PATH)) === 0) {
-                    $extPackages[$extPkgKey]['path'] = str_replace($modx->getOption('base_path', $options, MODX_BASE_PATH), '[[++base_path]]', $extPackage['path'], 1);
+                    $extPackages[$extPkgKey]['path'] = str_replace($modx->getOption('base_path', $options, MODX_BASE_PATH), '[[++base_path]]', $extPackage['path']);
                 }
             }
         }
@@ -200,13 +200,13 @@ try {
                 /** @var modWorkspace $object */
                 foreach ($modx->getIterator('modWorkspace', $classCriteria) as $object) {
                     if (strpos($object->path, MODX_CORE_PATH) === 0) {
-                        $object->set('path', str_replace(MODX_CORE_PATH, '{core_path}', $object->path, 1));
+                        $object->set('path', str_replace(MODX_CORE_PATH, '{core_path}', $object->path));
                     } elseif (strpos($object->path, $modx->getOption('assets_path', $options, MODX_ASSETS_PATH)) === 0) {
-                        $object->set('path', str_replace($modx->getOption('assets_path', $options, MODX_ASSETS_PATH), '{assets_path}', $object->path, 1));
+                        $object->set('path', str_replace($modx->getOption('assets_path', $options, MODX_ASSETS_PATH), '{assets_path}', $object->path));
                     } elseif (strpos($object->path, $modx->getOption('manager_path', $options, MODX_MANAGER_PATH)) === 0) {
-                        $object->set('path', str_replace($modx->getOption('manager_path', $options, MODX_MANAGER_PATH), '{manager_path}', $object->path, 1));
+                        $object->set('path', str_replace($modx->getOption('manager_path', $options, MODX_MANAGER_PATH), '{manager_path}', $object->path));
                     } elseif (strpos($object->path, $modx->getOption('base_path', $options, MODX_BASE_PATH)) === 0) {
-                        $object->set('path', str_replace($modx->getOption('base_path', $options, MODX_BASE_PATH), '{base_path}', $object->path, 1));
+                        $object->set('path', str_replace($modx->getOption('base_path', $options, MODX_BASE_PATH), '{base_path}', $object->path));
                     }
                     if ($package->put($object, $classAttributes)) {
                         $instances++;
