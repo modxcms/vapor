@@ -1,4 +1,5 @@
 <?php
+define('VAPOR_DIR', realpath(dirname(__FILE__)) . '/');
 try {
     include dirname(dirname(__FILE__)) . '/config.core.php';
     include MODX_CORE_PATH . 'model/modx/modx.class.php';
@@ -29,6 +30,16 @@ try {
     $modx->setDebug(-1);
 
     $modx->loadClass('transport.modPackageBuilder', '', false, true);
+
+    $core_path = realpath($modx->getOption('core_path', $options, MODX_CORE_PATH)) . '/';
+    $assets_path = realpath($modx->getOption('assets_path', $options, MODX_ASSETS_PATH)) . '/';
+    $manager_path = realpath($modx->getOption('manager_path', $options, MODX_MANAGER_PATH)) . '/';
+    $base_path = realpath($modx->getOption('base_path', $options, MODX_BASE_PATH)) . '/';
+
+    $modx->log(modX::LOG_LEVEL_INFO, "core_path=" . $core_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "assets_path=" . $assets_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "manager_path=" . $manager_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "base_path=" . $manager_path);
 
     $builder = new modPackageBuilder($modx);
 
@@ -151,33 +162,40 @@ try {
     if ($object) {
         $extPackages = $object->get('value');
         $extPackages = $modx->fromJSON($extPackages);
-        foreach ($extPackages as $extPkgKey => $extPackage) {
-            if (!empty($extPackage['path'])) {
-                if (strpos($extPackage['path'], MODX_CORE_PATH) === 0) {
-                    $extPackages[$extPkgKey]['path'] = str_replace(MODX_CORE_PATH, '[[++core_path]]', $extPackage['path']);
-                } elseif (strpos($extPackage['path'], $modx->getOption('assets_path', $options, MODX_ASSETS_PATH)) === 0) {
-                    $extPackages[$extPkgKey]['path'] = str_replace($modx->getOption('assets_path', $options, MODX_ASSETS_PATH), '[[++assets_path]]', $extPackage['path']);
-                } elseif (strpos($extPackage['path'], $modx->getOption('manager_path', $options, MODX_MANAGER_PATH)) === 0) {
-                    $extPackages[$extPkgKey]['path'] = str_replace($modx->getOption('manager_path', $options, MODX_MANAGER_PATH), '[[++manager_path]]', $extPackage['path']);
-                } elseif (strpos($extPackage['path'], $modx->getOption('base_path', $options, MODX_BASE_PATH)) === 0) {
-                    $extPackages[$extPkgKey]['path'] = str_replace($modx->getOption('base_path', $options, MODX_BASE_PATH), '[[++base_path]]', $extPackage['path']);
+        foreach ($extPackages as &$extPackage) {
+            if (!is_array($extPackage)) continue;
+
+            foreach ($extPackage as $pkgName => &$pkg)
+            if (!empty($pkg['path'])) {
+                $path = realpath($pkg['path']) . '/';
+                if (strpos($path, $core_path) === 0) {
+                    $path = str_replace($core_path, '[[++core_path]]', $path);
+                } elseif (strpos($path, $assets_path) === 0) {
+                    $path = str_replace($assets_path, '[[++assets_path]]', $path);
+                } elseif (strpos($path, $manager_path) === 0) {
+                    $path = str_replace($manager_path, '[[++manager_path]]', $path);
+                } elseif (strpos($path, $base_path) === 0) {
+                    $path = str_replace($base_path, '[[++base_path]]', $path);
                 }
+                $pkg['path'] = $path;
             }
         }
+        $modx->log(modX::LOG_LEVEL_INFO, "Setting extension packages to: " . print_r($extPackages, true));
+
         $object->set('value', $modx->toJSON($extPackages));
         $package->put($object, array_merge($attributes,
             array(
                 'validate' => array(
                     array(
                         'type' => 'php',
-                        'source' => 'scripts/validate.truncate_tables.php',
+                        'source' => VAPOR_DIR . 'scripts/validate.truncate_tables.php',
                         'classes' => $classes
                     ),
                 ),
                 'resolve' => array(
                     array(
                         'type' => 'php',
-                        'source' => 'scripts/resolve.extension_packages.php'
+                        'source' => VAPOR_DIR . 'scripts/resolve.extension_packages.php'
                     ),
                 )
             )
@@ -199,14 +217,14 @@ try {
             case 'modWorkspace':
                 /** @var modWorkspace $object */
                 foreach ($modx->getIterator('modWorkspace', $classCriteria) as $object) {
-                    if (strpos($object->path, MODX_CORE_PATH) === 0) {
-                        $object->set('path', str_replace(MODX_CORE_PATH, '{core_path}', $object->path));
-                    } elseif (strpos($object->path, $modx->getOption('assets_path', $options, MODX_ASSETS_PATH)) === 0) {
-                        $object->set('path', str_replace($modx->getOption('assets_path', $options, MODX_ASSETS_PATH), '{assets_path}', $object->path));
-                    } elseif (strpos($object->path, $modx->getOption('manager_path', $options, MODX_MANAGER_PATH)) === 0) {
-                        $object->set('path', str_replace($modx->getOption('manager_path', $options, MODX_MANAGER_PATH), '{manager_path}', $object->path));
-                    } elseif (strpos($object->path, $modx->getOption('base_path', $options, MODX_BASE_PATH)) === 0) {
-                        $object->set('path', str_replace($modx->getOption('base_path', $options, MODX_BASE_PATH), '{base_path}', $object->path));
+                    if (strpos($object->path, $core_path) === 0) {
+                        $object->set('path', str_replace($core_path, '{core_path}', $object->path));
+                    } elseif (strpos($object->path, $assets_path) === 0) {
+                        $object->set('path', str_replace($assets_path, '{assets_path}', $object->path));
+                    } elseif (strpos($object->path, $manager_path) === 0) {
+                        $object->set('path', str_replace($manager_path, '{manager_path}', $object->path));
+                    } elseif (strpos($object->path, $base_path) === 0) {
+                        $object->set('path', str_replace($base_path, '{base_path}', $object->path));
                     }
                     if ($package->put($object, $classAttributes)) {
                         $instances++;
