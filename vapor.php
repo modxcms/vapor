@@ -149,6 +149,22 @@ try {
     /* get the extension_packages and resolver */
     $object = $modx->getObject('modSystemSetting', array('key' => 'extension_packages'));
     if ($object) {
+        $extPackages = $object->get('value');
+        $extPackages = $modx->fromJSON($extPackages);
+        foreach ($extPackages as $extPkgKey => $extPackage) {
+            if (!empty($extPackage['path'])) {
+                if (strpos($extPackage['path'], MODX_CORE_PATH) === 0) {
+                    $extPackages[$extPkgKey]['path'] = str_replace(MODX_CORE_PATH, '[[++core_path]]', $extPackage['path'], 1);
+                } elseif (strpos($extPackage['path'], $modx->getOption('assets_path', $options, MODX_ASSETS_PATH)) === 0) {
+                    $extPackages[$extPkgKey]['path'] = str_replace($modx->getOption('assets_path', $options, MODX_ASSETS_PATH), '[[++assets_path]]', $extPackage['path'], 1);
+                } elseif (strpos($extPackage['path'], $modx->getOption('manager_path', $options, MODX_MANAGER_PATH)) === 0) {
+                    $extPackages[$extPkgKey]['path'] = str_replace($modx->getOption('manager_path', $options, MODX_MANAGER_PATH), '[[++manager_path]]', $extPackage['path'], 1);
+                } elseif (strpos($extPackage['path'], $modx->getOption('base_path', $options, MODX_BASE_PATH)) === 0) {
+                    $extPackages[$extPkgKey]['path'] = str_replace($modx->getOption('base_path', $options, MODX_BASE_PATH), '[[++base_path]]', $extPackage['path'], 1);
+                }
+            }
+        }
+        $object->set('value', $modx->toJSON($extPackages));
         $package->put($object, array_merge($attributes,
             array(
                 'validate' => array(
@@ -175,12 +191,31 @@ try {
         $classAttributes = $attributes;
         switch ($class) {
             case 'modSession':
-            case 'modWorkspace':
-                /* skip sessions, workspaces */
+                /* skip sessions */
                 continue 2;
             case 'modSystemSetting':
                 $classCriteria = array('key:!=' => 'extension_packages');
                 break;
+            case 'modWorkspace':
+                /** @var modWorkspace $object */
+                foreach ($modx->getIterator('modWorkspace', $classCriteria) as $object) {
+                    if (strpos($object->path, MODX_CORE_PATH) === 0) {
+                        $object->set('path', str_replace(MODX_CORE_PATH, '{core_path}', $object->path, 1));
+                    } elseif (strpos($object->path, $modx->getOption('assets_path', $options, MODX_ASSETS_PATH)) === 0) {
+                        $object->set('path', str_replace($modx->getOption('assets_path', $options, MODX_ASSETS_PATH), '{assets_path}', $object->path, 1));
+                    } elseif (strpos($object->path, $modx->getOption('manager_path', $options, MODX_MANAGER_PATH)) === 0) {
+                        $object->set('path', str_replace($modx->getOption('manager_path', $options, MODX_MANAGER_PATH), '{manager_path}', $object->path, 1));
+                    } elseif (strpos($object->path, $modx->getOption('base_path', $options, MODX_BASE_PATH)) === 0) {
+                        $object->set('path', str_replace($modx->getOption('base_path', $options, MODX_BASE_PATH), '{base_path}', $object->path, 1));
+                    }
+                    if ($package->put($object, $classAttributes)) {
+                        $instances++;
+                    } else {
+                        $modx->log(modX::LOG_LEVEL_WARN, "Could not package {$class} instance with pk: " . print_r($object->getPrimaryKey()));
+                    }
+                }
+                $modx->log(modX::LOG_LEVEL_INFO, "Packaged {$instances} of {$class}");
+                continue 2;
             case 'transport.modTransportPackage':
                 $modx->loadClass($class);
                 $response = $modx->call('modTransportPackage', 'listPackages', array(&$modx, $workspace->get('id')));
