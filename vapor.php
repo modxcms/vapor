@@ -55,31 +55,6 @@ try {
 
     $package = $builder->createPackage(PKG_NAME, PKG_VERSION, PKG_RELEASE);
 
-    $attributes = array(
-        'vehicle_class' => 'xPDOFileVehicle'
-    );
-
-    /* get all files from the components directory */
-    $package->put(
-        array(
-            'source' => MODX_CORE_PATH . 'components',
-            'target' => 'return MODX_CORE_PATH;'
-        ),
-        array(
-            'vehicle_class' => 'xPDOFileVehicle'
-        )
-    );
-    /* get all files from the assets directory */
-    $package->put(
-        array(
-            'source' => MODX_BASE_PATH . 'assets',
-            'target' => 'return MODX_BASE_PATH;'
-        ),
-        array(
-            'vehicle_class' => 'xPDOFileVehicle'
-        )
-    );
-
     /* Defines the classes to extract (also used for truncation) */
     $classes= array (
         'modAccessAction',
@@ -107,9 +82,6 @@ try {
         'modContext',
         'modContextResource',
         'modContextSetting',
-        'modDashboard',
-        'modDashboardWidget',
-        'modDashboardWidgetPlacement',
         'modElementPropertySet',
         'modEvent',
         'modFormCustomizationProfile',
@@ -146,10 +118,44 @@ try {
         'registry.db.modDbRegisterQueue',
         'transport.modTransportProvider',
         'transport.modTransportPackage',
-        'sources.modAccessMediaSource',
-        'sources.modMediaSource',
-        'sources.modMediaSourceElement',
-        'sources.modMediaSourceContext',
+    );
+
+    if (version_compare($modxVersion, '2.2.0', '>=')) {
+        array_push(
+            $classes,
+            'modDashboard',
+            'modDashboardWidget',
+            'modDashboardWidgetPlacement',
+            'sources.modAccessMediaSource',
+            'sources.modMediaSource',
+            'sources.modMediaSourceElement',
+            'sources.modMediaSourceContext'
+        );
+    }
+
+    $attributes = array(
+        'vehicle_class' => 'xPDOFileVehicle'
+    );
+
+    /* get all files from the components directory */
+    $package->put(
+        array(
+            'source' => MODX_CORE_PATH . 'components',
+            'target' => 'return MODX_CORE_PATH;'
+        ),
+        array(
+            'vehicle_class' => 'xPDOFileVehicle'
+        )
+    );
+    /* get all files from the assets directory */
+    $package->put(
+        array(
+            'source' => MODX_BASE_PATH . 'assets',
+            'target' => 'return MODX_BASE_PATH;'
+        ),
+        array(
+            'vehicle_class' => 'xPDOFileVehicle'
+        )
     );
 
     $attributes = array(
