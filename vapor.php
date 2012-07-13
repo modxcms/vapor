@@ -191,7 +191,7 @@ try {
             if (!is_array($extPackage)) continue;
 
             foreach ($extPackage as $pkgName => &$pkg)
-            if (!empty($pkg['path'])) {
+            if (!empty($pkg['path']) && strpos($pkg['path'], '[[++') === false) {
                 $path = realpath($pkg['path']) . '/';
                 if (strpos($path, $core_path) === 0) {
                     $path = str_replace($core_path, '[[++core_path]]', $path);
