@@ -159,6 +159,7 @@ try {
     );
 
     /* get all files from the components directory */
+    $modx->log(modX::LOG_LEVEL_INFO, "Packaging " . MODX_CORE_PATH . 'components');
     $package->put(
         array(
             'source' => MODX_CORE_PATH . 'components',
@@ -169,6 +170,7 @@ try {
         )
     );
     /* get all files from the assets directory */
+    $modx->log(modX::LOG_LEVEL_INFO, "Packaging " . MODX_BASE_PATH . 'assets');
     $package->put(
         array(
             'source' => MODX_BASE_PATH . 'assets',
@@ -203,6 +205,7 @@ try {
         }
         closedir($dh);
         foreach ($includes as $include) {
+            $modx->log(modX::LOG_LEVEL_INFO, "Packaging " . $include['source']);
             $package->put(
                 $include,
                 array(
@@ -212,6 +215,7 @@ try {
         }
     }
     /* package up the vapor model for use on install */
+    $modx->log(modX::LOG_LEVEL_INFO, "Packaging vaporVehicle class");
     $package->put(
         array(
             'source' => VAPOR_DIR . 'model/vapor',
