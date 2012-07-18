@@ -178,6 +178,35 @@ try {
             'vehicle_class' => 'xPDOFileVehicle'
         )
     );
+    /* find other files/directories in the MODX_BASE_PATH */
+    $excludes = array(
+        '_build',
+        'setup',
+        'assets',
+        'ht.access',
+        'index.php',
+        'config.core.php',
+        basename(VAPOR_DIR),
+        dirname(MODX_CORE_PATH) . '/' === MODX_BASE_PATH ? basename(MODX_CORE_PATH) : 'core',
+        dirname(MODX_CONNECTORS_PATH) . '/' === MODX_BASE_PATH ? basename(MODX_CONNECTORS_PATH) : 'connectors',
+        dirname(MODX_MANAGER_PATH) . '/' === MODX_BASE_PATH ? basename(MODX_MANAGER_PATH) : 'manager',
+    );
+    if ($dh = opendir(MODX_BASE_PATH)) {
+        while (($file = readdir($dh)) !== false) {
+            /* ignore files/dirs starting with . or matching an exclude */
+            if (strpos($file, '.') === 0 || in_array(strtolower($file), $excludes)) continue;
+            $package->put(
+                array(
+                    'source' => MODX_BASE_PATH . $file,
+                    'target' => 'return MODX_BASE_PATH;'
+                ),
+                array(
+                    'vehicle_class' => 'xPDOFileVehicle'
+                )
+            );
+        }
+        closedir($dh);
+    }
     /* package up the vapor model for use on install */
     $package->put(
         array(
