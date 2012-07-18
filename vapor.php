@@ -192,20 +192,24 @@ try {
         dirname(MODX_MANAGER_PATH) . '/' === MODX_BASE_PATH ? basename(MODX_MANAGER_PATH) : 'manager',
     );
     if ($dh = opendir(MODX_BASE_PATH)) {
+        $includes = array();
         while (($file = readdir($dh)) !== false) {
             /* ignore files/dirs starting with . or matching an exclude */
             if (strpos($file, '.') === 0 || in_array(strtolower($file), $excludes)) continue;
+            $includes[] = array(
+                'source' => MODX_BASE_PATH . $file,
+                'target' => 'return MODX_BASE_PATH;'
+            );
+        }
+        closedir($dh);
+        foreach ($includes as $include) {
             $package->put(
-                array(
-                    'source' => MODX_BASE_PATH . $file,
-                    'target' => 'return MODX_BASE_PATH;'
-                ),
+                $include,
                 array(
                     'vehicle_class' => 'xPDOFileVehicle'
                 )
             );
         }
-        closedir($dh);
     }
     /* package up the vapor model for use on install */
     $package->put(
