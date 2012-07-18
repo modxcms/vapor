@@ -48,7 +48,8 @@ try {
     $modx->setOption(xPDO::OPT_CACHE_DB, false);
     $modx->setDebug(-1);
 
-    $modx->loadClass('transport.modPackageBuilder', '', false, true);
+    $modxDatabase = $modx->getOption('dbname', $options, $modx->getOption('database', $options));
+    $modxTablePrefix = $modx->getOption('table_prefix', $options, '');
 
     $core_path = realpath($modx->getOption('core_path', $options, MODX_CORE_PATH)) . '/';
     $assets_path = realpath($modx->getOption('assets_path', $options, MODX_ASSETS_PATH)) . '/';
@@ -60,6 +61,7 @@ try {
     $modx->log(modX::LOG_LEVEL_INFO, "manager_path=" . $manager_path);
     $modx->log(modX::LOG_LEVEL_INFO, "base_path=" . $manager_path);
 
+    $modx->loadClass('transport.modPackageBuilder', '', false, true);
     $builder = new modPackageBuilder($modx);
 
     /** @var modWorkspace $workspace */
@@ -174,6 +176,22 @@ try {
         ),
         array(
             'vehicle_class' => 'xPDOFileVehicle'
+        )
+    );
+    /* package up the vapor model for use on install */
+    $package->put(
+        array(
+            'source' => VAPOR_DIR . 'model/vapor',
+            'target' => "return MODX_CORE_PATH . 'components/vapor/model/';"
+        ),
+        array(
+            'vehicle_class' => 'xPDOFileVehicle',
+            'resolve' => array(
+                array(
+                    'type' => 'php',
+                    'source' => VAPOR_DIR . 'scripts/resolve.vapor_model.php'
+                )
+            )
         )
     );
 
@@ -303,6 +321,79 @@ try {
             }
         }
         $modx->log(modX::LOG_LEVEL_INFO, "Packaged {$instances} of {$class}");
+    }
+
+    /* collect table names from classes and grab any additional tables/data not listed */
+    $coreTables = array();
+    foreach ($classes as $class) {
+        $coreTables[$class] = $modx->quote($modx->literal($modx->getTableName($class)));
+    }
+
+    $stmt = $modx->query("SELECT table_name FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '{$modxDatabase}' AND table_name NOT IN (" . implode(',', $coreTables) . ")");
+    $extraTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    if (is_array($extraTables) && !empty($extraTables)) {
+        $modx->loadClass('vapor.vaporVehicle', VAPOR_DIR . 'model/', true, true);
+        foreach ($extraTables as $extraTable) {
+            $instances = 0;
+            $object = array();
+            $attributes = array(
+                'vehicle_package' => 'vapor',
+                'vehicle_class' => 'vaporVehicle'
+            );
+
+            /* remove modx table_prefix if table starts with it */
+            $extraTableName = $extraTable;
+            if (strpos($extraTableName, $modxTablePrefix) === 0) {
+                $extraTableName = substr($extraTableName, strlen($modxTablePrefix));
+            }
+            $object['tableName'] = $extraTableName;
+            $modx->log(modX::LOG_LEVEL_INFO, "Extracting non-core table {$extraTableName}");
+
+            /* generate the CREATE TABLE statement */
+            $stmt = $modx->query("SHOW CREATE TABLE {$modx->escape($extraTable)}");
+            $resultSet = $stmt->fetch(PDO::FETCH_NUM);
+            $stmt->closeCursor();
+            if (isset($resultSet[1])) {
+                $object['table'] = str_replace("CREATE TABLE {$modx->escape($extraTable)}", "CREATE TABLE {$modx->escape('[[++table_prefix]]' . $extraTableName)}", $resultSet[1]);
+
+                /* collect the rows and generate INSERT statements */
+                $object['data'] = array();
+                $stmt = $modx->query("SELECT * FROM {$modx->escape($extraTable)}");
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    if ($instances === 0) {
+                        $fields = implode(', ', array_map(array($modx, 'escape'), array_keys($row)));
+                    }
+                    $values = array();
+                    while (list($key, $value) = each($row)) {
+                        switch (gettype($value)) {
+                            case 'string':
+                                $values[] = $modx->quote($value);
+                                break;
+                            case 'NULL':
+                            case 'array':
+                            case 'object':
+                            case 'resource':
+                            case 'unknown type':
+                                $values[] = 'NULL';
+                                break;
+                            default:
+                                $values[] = (string) $value;
+                                break;
+                        }
+                    }
+                    $values = implode(', ', $values);
+                    $object['data'][] = "INSERT INTO {$modx->escape('[[++table_prefix]]' . $extraTableName)} ({$fields}) VALUES ({$values})";
+                    $instances++;
+                }
+            }
+
+            if (!$package->put($object, $attributes)) {
+                $modx->log(modX::LOG_LEVEL_WARN, "Could not package rows for table {$extraTable}: " . print_r($object, true));
+            } else {
+                $modx->log(modX::LOG_LEVEL_INFO, "Packaged {$instances} rows for table {$extraTable}");
+            }
+        }
     }
 
     $package->pack();
