@@ -59,7 +59,7 @@ try {
     $modx->log(modX::LOG_LEVEL_INFO, "core_path=" . $core_path);
     $modx->log(modX::LOG_LEVEL_INFO, "assets_path=" . $assets_path);
     $modx->log(modX::LOG_LEVEL_INFO, "manager_path=" . $manager_path);
-    $modx->log(modX::LOG_LEVEL_INFO, "base_path=" . $manager_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "base_path=" . $base_path);
 
     $modx->loadClass('transport.modPackageBuilder', '', false, true);
     $builder = new modPackageBuilder($modx);
