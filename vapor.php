@@ -1,4 +1,24 @@
 <?php
+/*
+ * Copyright 2012 by MODX, LLC.
+ *
+ * This file is part of MODX Vapor.
+ *
+ * Vapor is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 of the License, or (at your option) any later
+ * version.
+ *
+ * Vapor is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * Vapor; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
+ * Suite 330, Boston, MA 02111-1307 USA
+ */
+
+define('VAPOR_DIR', realpath(dirname(__FILE__)) . '/');
 try {
     include dirname(dirname(__FILE__)) . '/config.core.php';
     include MODX_CORE_PATH . 'model/modx/modx.class.php';
@@ -28,8 +48,20 @@ try {
     $modx->setOption(xPDO::OPT_CACHE_DB, false);
     $modx->setDebug(-1);
 
-    $modx->loadClass('transport.modPackageBuilder', '', false, true);
+    $modxDatabase = $modx->getOption('dbname', $options, $modx->getOption('database', $options));
+    $modxTablePrefix = $modx->getOption('table_prefix', $options, '');
 
+    $core_path = realpath($modx->getOption('core_path', $options, MODX_CORE_PATH)) . '/';
+    $assets_path = realpath($modx->getOption('assets_path', $options, MODX_ASSETS_PATH)) . '/';
+    $manager_path = realpath($modx->getOption('manager_path', $options, MODX_MANAGER_PATH)) . '/';
+    $base_path = realpath($modx->getOption('base_path', $options, MODX_BASE_PATH)) . '/';
+
+    $modx->log(modX::LOG_LEVEL_INFO, "core_path=" . $core_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "assets_path=" . $assets_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "manager_path=" . $manager_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "base_path=" . $base_path);
+
+    $modx->loadClass('transport.modPackageBuilder', '', false, true);
     $builder = new modPackageBuilder($modx);
 
     /** @var modWorkspace $workspace */
@@ -43,31 +75,6 @@ try {
     define('PKG_RELEASE', $modxVersion);
 
     $package = $builder->createPackage(PKG_NAME, PKG_VERSION, PKG_RELEASE);
-
-    $attributes = array(
-        'vehicle_class' => 'xPDOFileVehicle'
-    );
-
-    /* get all files from the components directory */
-    $package->put(
-        array(
-            'source' => MODX_CORE_PATH . 'components',
-            'target' => 'return MODX_CORE_PATH;'
-        ),
-        array(
-            'vehicle_class' => 'xPDOFileVehicle'
-        )
-    );
-    /* get all files from the assets directory */
-    $package->put(
-        array(
-            'source' => MODX_BASE_PATH . 'assets',
-            'target' => 'return MODX_BASE_PATH;'
-        ),
-        array(
-            'vehicle_class' => 'xPDOFileVehicle'
-        )
-    );
 
     /* Defines the classes to extract (also used for truncation) */
     $classes= array (
@@ -96,9 +103,6 @@ try {
         'modContext',
         'modContextResource',
         'modContextSetting',
-        'modDashboard',
-        'modDashboardWidget',
-        'modDashboardWidgetPlacement',
         'modElementPropertySet',
         'modEvent',
         'modFormCustomizationProfile',
@@ -135,10 +139,97 @@ try {
         'registry.db.modDbRegisterQueue',
         'transport.modTransportProvider',
         'transport.modTransportPackage',
-        'sources.modAccessMediaSource',
-        'sources.modMediaSource',
-        'sources.modMediaSourceElement',
-        'sources.modMediaSourceContext',
+    );
+
+    if (version_compare($modxVersion, '2.2.0', '>=')) {
+        array_push(
+            $classes,
+            'modDashboard',
+            'modDashboardWidget',
+            'modDashboardWidgetPlacement',
+            'sources.modAccessMediaSource',
+            'sources.modMediaSource',
+            'sources.modMediaSourceElement',
+            'sources.modMediaSourceContext'
+        );
+    }
+
+    $attributes = array(
+        'vehicle_class' => 'xPDOFileVehicle'
+    );
+
+    /* get all files from the components directory */
+    $modx->log(modX::LOG_LEVEL_INFO, "Packaging " . MODX_CORE_PATH . 'components');
+    $package->put(
+        array(
+            'source' => MODX_CORE_PATH . 'components',
+            'target' => 'return MODX_CORE_PATH;'
+        ),
+        array(
+            'vehicle_class' => 'xPDOFileVehicle'
+        )
+    );
+    /* get all files from the assets directory */
+    $modx->log(modX::LOG_LEVEL_INFO, "Packaging " . MODX_BASE_PATH . 'assets');
+    $package->put(
+        array(
+            'source' => MODX_BASE_PATH . 'assets',
+            'target' => 'return MODX_BASE_PATH;'
+        ),
+        array(
+            'vehicle_class' => 'xPDOFileVehicle'
+        )
+    );
+    /* find other files/directories in the MODX_BASE_PATH */
+    $excludes = array(
+        '_build',
+        'setup',
+        'assets',
+        'ht.access',
+        'index.php',
+        'config.core.php',
+        basename(VAPOR_DIR),
+        dirname(MODX_CORE_PATH) . '/' === MODX_BASE_PATH ? basename(MODX_CORE_PATH) : 'core',
+        dirname(MODX_CONNECTORS_PATH) . '/' === MODX_BASE_PATH ? basename(MODX_CONNECTORS_PATH) : 'connectors',
+        dirname(MODX_MANAGER_PATH) . '/' === MODX_BASE_PATH ? basename(MODX_MANAGER_PATH) : 'manager',
+    );
+    if ($dh = opendir(MODX_BASE_PATH)) {
+        $includes = array();
+        while (($file = readdir($dh)) !== false) {
+            /* ignore files/dirs starting with . or matching an exclude */
+            if (strpos($file, '.') === 0 || in_array(strtolower($file), $excludes)) continue;
+            $includes[] = array(
+                'source' => MODX_BASE_PATH . $file,
+                'target' => 'return MODX_BASE_PATH;'
+            );
+        }
+        closedir($dh);
+        foreach ($includes as $include) {
+            $modx->log(modX::LOG_LEVEL_INFO, "Packaging " . $include['source']);
+            $package->put(
+                $include,
+                array(
+                    'vehicle_class' => 'xPDOFileVehicle'
+                )
+            );
+        }
+    }
+    /* package up the vapor model for use on install */
+    $modx->log(modX::LOG_LEVEL_INFO, "Packaging vaporVehicle class");
+    $package->put(
+        array(
+            'source' => VAPOR_DIR . 'model/vapor',
+            'target' => "return MODX_CORE_PATH . 'components/vapor/model/';"
+        ),
+        array(
+            'vehicle_class' => 'xPDOFileVehicle',
+            'resolve' => array(
+                array(
+                    'type' => 'php',
+                    'source' => VAPOR_DIR . 'scripts/resolve.vapor_model.php'
+                )
+            )
+        )
     );
 
     $attributes = array(
@@ -149,19 +240,42 @@ try {
     /* get the extension_packages and resolver */
     $object = $modx->getObject('modSystemSetting', array('key' => 'extension_packages'));
     if ($object) {
+        $extPackages = $object->get('value');
+        $extPackages = $modx->fromJSON($extPackages);
+        foreach ($extPackages as &$extPackage) {
+            if (!is_array($extPackage)) continue;
+
+            foreach ($extPackage as $pkgName => &$pkg)
+            if (!empty($pkg['path']) && strpos($pkg['path'], '[[++') === false) {
+                $path = realpath($pkg['path']) . '/';
+                if (strpos($path, $core_path) === 0) {
+                    $path = str_replace($core_path, '[[++core_path]]', $path);
+                } elseif (strpos($path, $assets_path) === 0) {
+                    $path = str_replace($assets_path, '[[++assets_path]]', $path);
+                } elseif (strpos($path, $manager_path) === 0) {
+                    $path = str_replace($manager_path, '[[++manager_path]]', $path);
+                } elseif (strpos($path, $base_path) === 0) {
+                    $path = str_replace($base_path, '[[++base_path]]', $path);
+                }
+                $pkg['path'] = $path;
+            }
+        }
+        $modx->log(modX::LOG_LEVEL_INFO, "Setting extension packages to: " . print_r($extPackages, true));
+
+        $object->set('value', $modx->toJSON($extPackages));
         $package->put($object, array_merge($attributes,
             array(
                 'validate' => array(
                     array(
                         'type' => 'php',
-                        'source' => 'scripts/validate.truncate_tables.php',
+                        'source' => VAPOR_DIR . 'scripts/validate.truncate_tables.php',
                         'classes' => $classes
                     ),
                 ),
                 'resolve' => array(
                     array(
                         'type' => 'php',
-                        'source' => 'scripts/resolve.extension_packages.php'
+                        'source' => VAPOR_DIR . 'scripts/resolve.extension_packages.php'
                     ),
                 )
             )
@@ -175,12 +289,31 @@ try {
         $classAttributes = $attributes;
         switch ($class) {
             case 'modSession':
-            case 'modWorkspace':
-                /* skip sessions, workspaces */
+                /* skip sessions */
                 continue 2;
             case 'modSystemSetting':
                 $classCriteria = array('key:!=' => 'extension_packages');
                 break;
+            case 'modWorkspace':
+                /** @var modWorkspace $object */
+                foreach ($modx->getIterator('modWorkspace', $classCriteria) as $object) {
+                    if (strpos($object->path, $core_path) === 0) {
+                        $object->set('path', str_replace($core_path, '{core_path}', $object->path));
+                    } elseif (strpos($object->path, $assets_path) === 0) {
+                        $object->set('path', str_replace($assets_path, '{assets_path}', $object->path));
+                    } elseif (strpos($object->path, $manager_path) === 0) {
+                        $object->set('path', str_replace($manager_path, '{manager_path}', $object->path));
+                    } elseif (strpos($object->path, $base_path) === 0) {
+                        $object->set('path', str_replace($base_path, '{base_path}', $object->path));
+                    }
+                    if ($package->put($object, $classAttributes)) {
+                        $instances++;
+                    } else {
+                        $modx->log(modX::LOG_LEVEL_WARN, "Could not package {$class} instance with pk: " . print_r($object->getPrimaryKey()));
+                    }
+                }
+                $modx->log(modX::LOG_LEVEL_INFO, "Packaged {$instances} of {$class}");
+                continue 2;
             case 'transport.modTransportPackage':
                 $modx->loadClass($class);
                 $response = $modx->call('modTransportPackage', 'listPackages', array(&$modx, $workspace->get('id')));
@@ -227,9 +360,82 @@ try {
         $modx->log(modX::LOG_LEVEL_INFO, "Packaged {$instances} of {$class}");
     }
 
+    /* collect table names from classes and grab any additional tables/data not listed */
+    $coreTables = array();
+    foreach ($classes as $class) {
+        $coreTables[$class] = $modx->quote($modx->literal($modx->getTableName($class)));
+    }
+
+    $stmt = $modx->query("SELECT table_name FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '{$modxDatabase}' AND table_name NOT IN (" . implode(',', $coreTables) . ")");
+    $extraTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    if (is_array($extraTables) && !empty($extraTables)) {
+        $modx->loadClass('vapor.vaporVehicle', VAPOR_DIR . 'model/', true, true);
+        foreach ($extraTables as $extraTable) {
+            $instances = 0;
+            $object = array();
+            $attributes = array(
+                'vehicle_package' => 'vapor',
+                'vehicle_class' => 'vaporVehicle'
+            );
+
+            /* remove modx table_prefix if table starts with it */
+            $extraTableName = $extraTable;
+            if (strpos($extraTableName, $modxTablePrefix) === 0) {
+                $extraTableName = substr($extraTableName, strlen($modxTablePrefix));
+            }
+            $object['tableName'] = $extraTableName;
+            $modx->log(modX::LOG_LEVEL_INFO, "Extracting non-core table {$extraTableName}");
+
+            /* generate the CREATE TABLE statement */
+            $stmt = $modx->query("SHOW CREATE TABLE {$modx->escape($extraTable)}");
+            $resultSet = $stmt->fetch(PDO::FETCH_NUM);
+            $stmt->closeCursor();
+            if (isset($resultSet[1])) {
+                $object['table'] = str_replace("CREATE TABLE {$modx->escape($extraTable)}", "CREATE TABLE {$modx->escape('[[++table_prefix]]' . $extraTableName)}", $resultSet[1]);
+
+                /* collect the rows and generate INSERT statements */
+                $object['data'] = array();
+                $stmt = $modx->query("SELECT * FROM {$modx->escape($extraTable)}");
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    if ($instances === 0) {
+                        $fields = implode(', ', array_map(array($modx, 'escape'), array_keys($row)));
+                    }
+                    $values = array();
+                    while (list($key, $value) = each($row)) {
+                        switch (gettype($value)) {
+                            case 'string':
+                                $values[] = $modx->quote($value);
+                                break;
+                            case 'NULL':
+                            case 'array':
+                            case 'object':
+                            case 'resource':
+                            case 'unknown type':
+                                $values[] = 'NULL';
+                                break;
+                            default:
+                                $values[] = (string) $value;
+                                break;
+                        }
+                    }
+                    $values = implode(', ', $values);
+                    $object['data'][] = "INSERT INTO {$modx->escape('[[++table_prefix]]' . $extraTableName)} ({$fields}) VALUES ({$values})";
+                    $instances++;
+                }
+            }
+
+            if (!$package->put($object, $attributes)) {
+                $modx->log(modX::LOG_LEVEL_WARN, "Could not package rows for table {$extraTable}: " . print_r($object, true));
+            } else {
+                $modx->log(modX::LOG_LEVEL_INFO, "Packaged {$instances} rows for table {$extraTable}");
+            }
+        }
+    }
+
     $package->pack();
 } catch (Exception $e) {
-    if ($modx) {
+    if (!empty($modx)) {
         $modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
     } else {
         echo $e->getMessage() . "\n";
