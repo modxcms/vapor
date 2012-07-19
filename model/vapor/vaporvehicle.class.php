@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2010-2012 by MODX, LLC.
+ * Copyright 2012 by MODX, LLC.
  *
  * This file is part of MODX Vapor.
  *
@@ -18,18 +18,18 @@
  * Suite 330, Boston, MA 02111-1307 USA
  */
 
+/**
+ * A custom xPDOVehicle implementation for generic MYSQL tables and data.
+ */
 class vaporVehicle extends xPDOVehicle {
     public $class = 'vaporVehicle';
 
     /**
-     * Put an artifact representation into this vehicle.
+     * Put a representation of a MYSQL table and it's data into this vehicle.
      *
-     * @param xPDOTransport $transport The transport package hosting the
-     * vehicle.
-     * @param mixed &$object A reference to the artifact this vehicle will
-     * represent.
-     * @param array $attributes Additional attributes represented in the
-     * vehicle.
+     * @param xPDOTransport $transport The transport package hosting the vehicle.
+     * @param mixed &$object A reference to the artifact this vehicle will represent.
+     * @param array $attributes Additional attributes represented in the vehicle.
      */
     public function put(& $transport, & $object, $attributes = array ()) {
         if (!isset ($this->payload['class'])) {
@@ -45,10 +45,8 @@ class vaporVehicle extends xPDOVehicle {
      * Install the vehicle artifact into a transport host.
      *
      * @param xPDOTransport &$transport A reference to the transport.
-     * @param array $options An array of options for altering the installation
-     * of the artifact.
-     * @return boolean True if the installation of the vehicle artifact was
-     * successful.
+     * @param array $options An array of options for altering the installation of the artifact.
+     * @return boolean True if the installation of the vehicle artifact was successful.
      */
     public function install(& $transport, $options) {
         $installed = false;
@@ -86,12 +84,11 @@ class vaporVehicle extends xPDOVehicle {
     }
 
     /**
-     * Uninstalls the vehicle artifact from a transport host.
+     * This vehicle implementation does not support uninstall.
      *
-     * vehicle.
      * @param xPDOTransport &$transport A reference to the transport.
-     * @param array $options An array of options for altering the uninstallation
-     * of the artifact.
+     * @param array $options An array of options for altering the uninstallation of the artifact.
+     * @return boolean True, always.
      */
     public function uninstall(& $transport, $options) {
         return true;

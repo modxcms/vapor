@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2010-2012 by MODX, LLC.
+ * Copyright 2012 by MODX, LLC.
  *
  * This file is part of MODX Vapor.
  *
@@ -435,7 +435,7 @@ try {
 
     $package->pack();
 } catch (Exception $e) {
-    if ($modx) {
+    if (!empty($modx)) {
         $modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
     } else {
         echo $e->getMessage() . "\n";
