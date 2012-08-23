@@ -477,15 +477,15 @@ try {
         $modx->log(modX::LOG_LEVEL_INFO, "Completed extracting package: {$package->signature}");
     }
     $endTime = microtime(true);
-    $modx->log(modX::LOG_LEVEL_INFO, sprintf("Vapor execution completed without exception in %2.4s\n", $endTime - $startTime));
+    $modx->log(modX::LOG_LEVEL_INFO, sprintf("Vapor execution completed without exception in %2.4fs\n", $endTime - $startTime));
 } catch (Exception $e) {
     if (empty($endTime)) $endTime = microtime(true);
     if (!empty($modx)) {
         $modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
-        $modx->log(modX::LOG_LEVEL_INFO, sprintf("Vapor execution completed with exception in %2.4s\n", $endTime - $startTime));
+        $modx->log(modX::LOG_LEVEL_INFO, sprintf("Vapor execution completed with exception in %2.4fs\n", $endTime - $startTime));
     } else {
         echo $e->getMessage() . "\n";
     }
-    printf("Vapor execution completed with exception in %2.4s\n", $endTime - $startTime);
+    printf("Vapor execution completed with exception in %2.4fs\n", $endTime - $startTime);
 }
-printf("Vapor execution completed without exception in %2.4s\n", $endTime - $startTime);
+printf("Vapor execution completed without exception in %2.4fs\n", $endTime - $startTime);
