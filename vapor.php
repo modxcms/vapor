@@ -472,17 +472,21 @@ try {
     }
 
     if (!$package->pack()) {
-        $modx->log(modX::LOG_LEVEL_ERROR, "Error extracting package, could not pack transport: {$package->signature}");
+        $message = "Error extracting package, could not pack transport: {$package->signature}";
+        $modx->log(modX::LOG_LEVEL_ERROR, $message);
+        echo "{$message}\n";
     } else {
-        $modx->log(modX::LOG_LEVEL_INFO, "Completed extracting package: {$package->signature}");
+        $message = "Completed extracting package: {$package->signature}";
+        $modx->log(modX::LOG_LEVEL_INFO, $message);
+        echo "{$message}\n";
     }
     $endTime = microtime(true);
-    $modx->log(modX::LOG_LEVEL_INFO, sprintf("Vapor execution completed without exception in %2.4fs\n", $endTime - $startTime));
+    $modx->log(modX::LOG_LEVEL_INFO, sprintf("Vapor execution completed without exception in %2.4fs", $endTime - $startTime));
 } catch (Exception $e) {
     if (empty($endTime)) $endTime = microtime(true);
     if (!empty($modx)) {
         $modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
-        $modx->log(modX::LOG_LEVEL_INFO, sprintf("Vapor execution completed with exception in %2.4fs\n", $endTime - $startTime));
+        $modx->log(modX::LOG_LEVEL_INFO, sprintf("Vapor execution completed with exception in %2.4fs", $endTime - $startTime));
     } else {
         echo $e->getMessage() . "\n";
     }
