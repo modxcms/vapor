@@ -20,12 +20,12 @@
 $startTime = microtime(true);
 define('VAPOR_DIR', realpath(dirname(__FILE__)) . '/');
 try {
+    include dirname(dirname(__FILE__)) . '/config.core.php';
+    include MODX_CORE_PATH . 'model/modx/modx.class.php';
+
     if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
         set_time_limit(0);
     }
-
-    include dirname(dirname(__FILE__)) . '/config.core.php';
-    include MODX_CORE_PATH . 'model/modx/modx.class.php';
 
     $options = array(
         'log_level' => xPDO::LOG_LEVEL_INFO,
