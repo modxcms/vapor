@@ -266,7 +266,14 @@ try {
 
             foreach ($extPackage as $pkgName => &$pkg)
             if (!empty($pkg['path']) && strpos($pkg['path'], '[[++') === false) {
-                $path = realpath($pkg['path']) . '/';
+                if (substr($pkg['path'], 0, 1) !== '/' || strpos($pkg['path'], $base_path) !== 0) {
+                    $path = realpath($pkg['path']);
+                    if ($path === false) {
+                        $path = $pkg['path'];
+                    }
+                } else {
+                    $path = $pkg['path'];
+                }
                 if (strpos($path, $core_path) === 0) {
                     $path = str_replace($core_path, '[[++core_path]]', $path);
                 } elseif (strpos($path, $assets_path) === 0) {
