@@ -29,13 +29,20 @@ try {
 
     $options = array(
         'log_level' => xPDO::LOG_LEVEL_INFO,
-        'log_target' => XPDO_CLI_MODE ? 'ECHO' : 'HTML',
+        'log_target' => array(
+            'target' => 'FILE',
+            'options' => array(
+                'filename' => 'vapor-' . strftime('%Y%m%dT%H%M%S', $startTime) . '.log'
+            )
+        ),
         xPDO::OPT_CACHE_DB => false,
+        xPDO::OPT_SETUP => true
     );
     $modx = new modX('', $options);
     $modx->setLogTarget($options['log_target']);
     $modx->setLogLevel($options['log_level']);
     $modx->setOption(xPDO::OPT_CACHE_DB, false);
+    $modx->setOption(xPDO::OPT_SETUP, true);
     $modx->setDebug(-1);
 
     $modx->startTime = $startTime;
@@ -52,6 +59,7 @@ try {
     $modx->setLogTarget($options['log_target']);
     $modx->setLogLevel($options['log_level']);
     $modx->setOption(xPDO::OPT_CACHE_DB, false);
+    $modx->setOption(xPDO::OPT_SETUP, true);
     $modx->setDebug(-1);
 
     $modxDatabase = $modx->getOption('dbname', $options, $modx->getOption('database', $options));
@@ -461,12 +469,16 @@ try {
     } else {
         $modx->log(modX::LOG_LEVEL_INFO, "Completed extracting package: {$package->signature}");
     }
+    $endTime = microtime(true);
+    $modx->log(modX::LOG_LEVEL_INFO, sprintf("Vapor execution completed without exception in %2.4s\n", $endTime - $startTime));
 } catch (Exception $e) {
+    if (empty($endTime)) $endTime = microtime(true);
     if (!empty($modx)) {
         $modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+        $modx->log(modX::LOG_LEVEL_INFO, sprintf("Vapor execution completed with exception in %2.4s\n", $endTime - $startTime));
     } else {
         echo $e->getMessage() . "\n";
     }
-    printf("Vapor execution completed with exception in %2.4s\n", microtime(true) - $startTime);
+    printf("Vapor execution completed with exception in %2.4s\n", $endTime - $startTime);
 }
-printf("Vapor execution completed without exception in %2.4s\n", microtime(true) - $startTime);
+printf("Vapor execution completed without exception in %2.4s\n", $endTime - $startTime);
