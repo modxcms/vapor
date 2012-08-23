@@ -17,9 +17,13 @@
  * Vapor; if not, write to the Free Software Foundation, Inc., 59 Temple Place,
  * Suite 330, Boston, MA 02111-1307 USA
  */
-
+$startTime = microtime(true);
 define('VAPOR_DIR', realpath(dirname(__FILE__)) . '/');
 try {
+    if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+        set_time_limit(0);
+    }
+
     include dirname(dirname(__FILE__)) . '/config.core.php';
     include MODX_CORE_PATH . 'model/modx/modx.class.php';
 
@@ -33,6 +37,8 @@ try {
     $modx->setLogLevel($options['log_level']);
     $modx->setOption(xPDO::OPT_CACHE_DB, false);
     $modx->setDebug(-1);
+
+    $modx->startTime = $startTime;
 
     $modx->getVersionData();
     $modxVersion = $modx->version['full_version'];
@@ -71,7 +77,7 @@ try {
     }
 
     if (!defined('PKG_NAME')) define('PKG_NAME', $modx->getOption('http_host', $options, 'cloud_import'));
-    define('PKG_VERSION', strftime("%y%m%d.%H%M.%S"));
+    define('PKG_VERSION', strftime("%y%m%d.%H%M.%S", $startTime));
     define('PKG_RELEASE', $modxVersion);
 
     $package = $builder->createPackage(PKG_NAME, PKG_VERSION, PKG_RELEASE);
@@ -214,6 +220,11 @@ try {
             );
         }
     }
+
+    if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+        set_time_limit(0);
+    }
+
     /* package up the vapor model for use on install */
     $modx->log(modX::LOG_LEVEL_INFO, "Packaging vaporVehicle class");
     $package->put(
@@ -284,6 +295,10 @@ try {
 
     /* loop through the classes and package the objects */
     foreach ($classes as $class) {
+        if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+            set_time_limit(0);
+        }
+
         $instances = 0;
         $classCriteria = null;
         $classAttributes = $attributes;
@@ -372,6 +387,10 @@ try {
     if (is_array($extraTables) && !empty($extraTables)) {
         $modx->loadClass('vapor.vaporVehicle', VAPOR_DIR . 'model/', true, true);
         foreach ($extraTables as $extraTable) {
+            if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+                set_time_limit(0);
+            }
+
             $instances = 0;
             $object = array();
             $attributes = array(
@@ -433,13 +452,21 @@ try {
         }
     }
 
-    $package->pack();
+    if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+        set_time_limit(0);
+    }
+
+    if (!$package->pack()) {
+        $modx->log(modX::LOG_LEVEL_ERROR, "Error extracting package, could not pack transport: {$package->signature}");
+    } else {
+        $modx->log(modX::LOG_LEVEL_INFO, "Completed extracting package: {$package->signature}");
+    }
 } catch (Exception $e) {
     if (!empty($modx)) {
         $modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
     } else {
         echo $e->getMessage() . "\n";
     }
+    printf("Vapor execution completed with exception in %2.4s\n", microtime(true) - $startTime);
 }
-
-$modx->log(modX::LOG_LEVEL_INFO, "Completed extracting package: {$package->signature}");
+printf("Vapor execution completed without exception in %2.4s\n", microtime(true) - $startTime);
