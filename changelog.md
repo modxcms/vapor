@@ -1,5 +1,7 @@
 # MODX Vapor Changelog
 
+- Fix realpath missing trailing slash on extension_packages
+
 ## 1.0.0-beta-2 (August 23, 2012)
 
 - Use realpath for extension_packages path only if not absolute

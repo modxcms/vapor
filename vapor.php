@@ -266,10 +266,12 @@ try {
 
             foreach ($extPackage as $pkgName => &$pkg)
             if (!empty($pkg['path']) && strpos($pkg['path'], '[[++') === false) {
-                if (substr($pkg['path'], 0, 1) !== '/' || strpos($pkg['path'], $base_path) !== 0) {
+                if (substr($pkg['path'], 0, 1) !== '/' || (strpos($pkg['path'], $base_path) !== 0 && strpos($pkg['path'], $core_path) !== 0)) {
                     $path = realpath($pkg['path']);
                     if ($path === false) {
                         $path = $pkg['path'];
+                    } else {
+                        $path = rtrim($path, '/') . '/';
                     }
                 } else {
                     $path = $pkg['path'];
