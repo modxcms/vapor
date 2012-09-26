@@ -417,7 +417,7 @@ try {
 
             /* remove modx table_prefix if table starts with it */
             $extraTableName = $extraTable;
-            if (strpos($extraTableName, $modxTablePrefix) === 0) {
+            if (!empty($modxTablePrefix) && strpos($extraTableName, $modxTablePrefix) === 0) {
                 $extraTableName = substr($extraTableName, strlen($modxTablePrefix));
             }
             $object['tableName'] = $extraTableName;

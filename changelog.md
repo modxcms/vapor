@@ -1,5 +1,6 @@
 # MODX Vapor Changelog
 
+- Fix PHP warning when table_prefix is empty
 - Fix realpath missing trailing slash on extension_packages
 
 ## 1.0.0-beta-2 (August 23, 2012)
