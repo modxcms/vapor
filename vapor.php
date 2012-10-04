@@ -20,6 +20,17 @@
 $startTime = microtime(true);
 define('VAPOR_DIR', realpath(dirname(__FILE__)) . '/');
 try {
+    $vaporOptions = array(
+        'excludeExtraTablePrefix' => array(),
+        'excludeExtraTables' => array(),
+        'excludeFiles' => array()
+    );
+    if (is_readable(VAPOR_DIR . 'config.php')) {
+        $vaporConfigOptions = @include VAPOR_DIR . 'config.php';
+        if (is_array($vaporConfigOptions)) {
+            $vaporOptions = array_merge($vaporOptions, $vaporConfigOptions);
+        }
+    }
     include dirname(dirname(__FILE__)) . '/config.core.php';
     include MODX_CORE_PATH . 'model/modx/modx.class.php';
 
@@ -27,7 +38,7 @@ try {
         set_time_limit(0);
     }
 
-    $options = array(
+    $options = array_merge(array(
         'log_level' => xPDO::LOG_LEVEL_INFO,
         'log_target' => array(
             'target' => 'FILE',
@@ -37,7 +48,7 @@ try {
         ),
         xPDO::OPT_CACHE_DB => false,
         xPDO::OPT_SETUP => true
-    );
+    ), $options);
     $modx = new modX('', $options);
     $modx->setLogTarget($options['log_target']);
     $modx->setLogLevel($options['log_level']);
@@ -207,11 +218,16 @@ try {
         dirname(MODX_CONNECTORS_PATH) . '/' === MODX_BASE_PATH ? basename(MODX_CONNECTORS_PATH) : 'connectors',
         dirname(MODX_MANAGER_PATH) . '/' === MODX_BASE_PATH ? basename(MODX_MANAGER_PATH) : 'manager',
     );
+    if (isset($vaporOptions['excludeFiles']) && is_array($vaporOptions['excludeFiles'])) {
+        $excludes = array_unique($excludes + $vaporOptions['excludeFiles']);
+    }
     if ($dh = opendir(MODX_BASE_PATH)) {
         $includes = array();
         while (($file = readdir($dh)) !== false) {
             /* ignore files/dirs starting with . or matching an exclude */
-            if (strpos($file, '.') === 0 || in_array(strtolower($file), $excludes)) continue;
+            if (strpos($file, '.') === 0 || in_array(strtolower($file), $excludes)) {
+                continue;
+            }
             $includes[] = array(
                 'source' => MODX_BASE_PATH . $file,
                 'target' => 'return MODX_BASE_PATH;'
@@ -403,7 +419,10 @@ try {
 
     if (is_array($extraTables) && !empty($extraTables)) {
         $modx->loadClass('vapor.vaporVehicle', VAPOR_DIR . 'model/', true, true);
+        $excludeExtraTablePrefix = isset($vaporOptions['excludeExtraTablePrefix']) && is_array($vaporOptions['excludeExtraTablePrefix']) ? $vaporOptions['excludeExtraTablePrefix'] : array();
+        $excludeExtraTables = isset($vaporOptions['excludeExtraTables']) && is_array($vaporOptions['excludeExtraTables']) ? $vaporOptions['excludeExtraTables'] : array();
         foreach ($extraTables as $extraTable) {
+            if (in_array($extraTable, $excludeExtraTables)) continue;
             if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
                 set_time_limit(0);
             }
@@ -419,6 +438,11 @@ try {
             $extraTableName = $extraTable;
             if (!empty($modxTablePrefix) && strpos($extraTableName, $modxTablePrefix) === 0) {
                 $extraTableName = substr($extraTableName, strlen($modxTablePrefix));
+                $addTablePrefix = true;
+            } elseif (!empty($modxTablePrefix) || in_array($extraTableName, $excludeExtraTablePrefix)) {
+                $addTablePrefix = false;
+            } else {
+                $addTablePrefix = true;
             }
             $object['tableName'] = $extraTableName;
             $modx->log(modX::LOG_LEVEL_INFO, "Extracting non-core table {$extraTableName}");
@@ -428,7 +452,9 @@ try {
             $resultSet = $stmt->fetch(PDO::FETCH_NUM);
             $stmt->closeCursor();
             if (isset($resultSet[1])) {
-                $object['table'] = str_replace("CREATE TABLE {$modx->escape($extraTable)}", "CREATE TABLE {$modx->escape('[[++table_prefix]]' . $extraTableName)}", $resultSet[1]);
+                if ($addTablePrefix) {
+                    $object['table'] = str_replace("CREATE TABLE {$modx->escape($extraTable)}", "CREATE TABLE {$modx->escape('[[++table_prefix]]' . $extraTableName)}", $resultSet[1]);
+                }
 
                 /* collect the rows and generate INSERT statements */
                 $object['data'] = array();
@@ -456,7 +482,11 @@ try {
                         }
                     }
                     $values = implode(', ', $values);
-                    $object['data'][] = "INSERT INTO {$modx->escape('[[++table_prefix]]' . $extraTableName)} ({$fields}) VALUES ({$values})";
+                    if ($addTablePrefix) {
+                        $object['data'][] = "INSERT INTO {$modx->escape('[[++table_prefix]]' . $extraTableName)} ({$fields}) VALUES ({$values})";
+                    } else {
+                        $object['data'][] = "INSERT INTO {$modx->escape($extraTable)} ({$fields}) VALUES ({$values})";
+                    }
                     $instances++;
                 }
             }
