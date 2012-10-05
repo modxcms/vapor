@@ -38,7 +38,7 @@ try {
         set_time_limit(0);
     }
 
-    $options = array_merge(array(
+    $options = array(
         'log_level' => xPDO::LOG_LEVEL_INFO,
         'log_target' => array(
             'target' => 'FILE',
@@ -48,7 +48,7 @@ try {
         ),
         xPDO::OPT_CACHE_DB => false,
         xPDO::OPT_SETUP => true
-    ), $options);
+    );
     $modx = new modX('', $options);
     $modx->setLogTarget($options['log_target']);
     $modx->setLogLevel($options['log_level']);
