@@ -1,5 +1,7 @@
 # MODX Vapor Changelog
 
+## 1.0.0-beta-4 (October 8, 2012)
+
 - [#8817](http://tracker.modx.com/issues/8817) Fix media source import via resolvers
 - Fix invalid reference from $options to $fileMeta in resolvers
 - [#8871](http://tracker.modx.com/issues/8871) Fix import of extra tables without a table_prefix
