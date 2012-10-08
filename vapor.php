@@ -499,7 +499,11 @@ try {
             $stmt->closeCursor();
             if (isset($resultSet[1])) {
                 if ($addTablePrefix) {
+                    $object['drop'] = "DROP TABLE IF EXISTS {$modx->escape('[[++table_prefix]]' . $extraTableName)}";
                     $object['table'] = str_replace("CREATE TABLE {$modx->escape($extraTable)}", "CREATE TABLE {$modx->escape('[[++table_prefix]]' . $extraTableName)}", $resultSet[1]);
+                } else {
+                    $object['drop'] = "DROP TABLE IF EXISTS {$modx->escape($extraTableName)}";
+                    $object['table'] = $resultSet[1];
                 }
 
                 /* collect the rows and generate INSERT statements */
