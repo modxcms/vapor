@@ -394,6 +394,52 @@ try {
                 }
                 $modx->log(modX::LOG_LEVEL_INFO, "Packaged {$instances} of {$class}");
                 continue 2;
+            case 'sources.modMediaSource':
+                foreach ($modx->getIterator('sources.modMediaSource') as $object) {
+                    $classAttributes = $attributes;
+                    /** @var modMediaSource $object */
+                    if ($object->get('is_stream') && $object->initialize()) {
+                        $sourceBases = $object->getBases('');
+                        $source = $object->getBasePath();
+                        if (!$sourceBases['pathIsRelative'] && strpos($source, '://') === false) {
+                            $sourceBasePath = $source;
+                            if (strpos($source, $base_path) === 0) {
+                                $sourceBasePath = str_replace($base_path, '', $sourceBasePath);
+                                $classAttributes['resolve'][] = array(
+                                    'type' => 'php',
+                                    'source' => VAPOR_DIR . 'scripts/resolve.media_source.php',
+                                    'target' => $sourceBasePath,
+                                    'targetRelative' => true
+                                );
+                            } else {
+                                /* when coming from Windows sources, remove "{volume}:" */
+                                if (strpos($source, ':\\') !== false || strpos($source, ':/') !== false) {
+                                    $sourceBasePath = str_replace('\\', '/', substr($source, strpos($source, ':') + 1));
+                                }
+                                $target = 'dirname(MODX_BASE_PATH) . "/sources/' . ltrim(dirname($sourceBasePath), '/') . '/"';
+                                $classAttributes['resolve'][] = array(
+                                    'type' => 'file',
+                                    'source' => $source,
+                                    'target' => "return {$target};"
+                                );
+                                $classAttributes['resolve'][] = array(
+                                    'type' => 'php',
+                                    'source' => VAPOR_DIR . 'scripts/resolve.media_source.php',
+                                    'target' => $sourceBasePath,
+                                    'targetRelative' => false,
+                                    'targetPrepend' => "return dirname(MODX_BASE_PATH) . '/sources/';"
+                                );
+                            }
+                        }
+                    }
+                    if ($package->put($object, $classAttributes)) {
+                        $instances++;
+                    } else {
+                        $modx->log(modX::LOG_LEVEL_WARN, "Could not package {$class} instance with pk: " . print_r($object->getPrimaryKey()));
+                    }
+                }
+                $modx->log(modX::LOG_LEVEL_INFO, "Packaged {$instances} of {$class}");
+                continue 2;
             default:
                 break;
         }
