@@ -20,6 +20,17 @@
 $startTime = microtime(true);
 define('VAPOR_DIR', realpath(dirname(__FILE__)) . '/');
 try {
+    $vaporOptions = array(
+        'excludeExtraTablePrefix' => array(),
+        'excludeExtraTables' => array(),
+        'excludeFiles' => array()
+    );
+    if (is_readable(VAPOR_DIR . 'config.php')) {
+        $vaporConfigOptions = @include VAPOR_DIR . 'config.php';
+        if (is_array($vaporConfigOptions)) {
+            $vaporOptions = array_merge($vaporOptions, $vaporConfigOptions);
+        }
+    }
     include dirname(dirname(__FILE__)) . '/config.core.php';
     include MODX_CORE_PATH . 'model/modx/modx.class.php';
 
@@ -207,11 +218,16 @@ try {
         dirname(MODX_CONNECTORS_PATH) . '/' === MODX_BASE_PATH ? basename(MODX_CONNECTORS_PATH) : 'connectors',
         dirname(MODX_MANAGER_PATH) . '/' === MODX_BASE_PATH ? basename(MODX_MANAGER_PATH) : 'manager',
     );
+    if (isset($vaporOptions['excludeFiles']) && is_array($vaporOptions['excludeFiles'])) {
+        $excludes = array_unique($excludes + $vaporOptions['excludeFiles']);
+    }
     if ($dh = opendir(MODX_BASE_PATH)) {
         $includes = array();
         while (($file = readdir($dh)) !== false) {
             /* ignore files/dirs starting with . or matching an exclude */
-            if (strpos($file, '.') === 0 || in_array(strtolower($file), $excludes)) continue;
+            if (strpos($file, '.') === 0 || in_array(strtolower($file), $excludes)) {
+                continue;
+            }
             $includes[] = array(
                 'source' => MODX_BASE_PATH . $file,
                 'target' => 'return MODX_BASE_PATH;'
@@ -378,6 +394,52 @@ try {
                 }
                 $modx->log(modX::LOG_LEVEL_INFO, "Packaged {$instances} of {$class}");
                 continue 2;
+            case 'sources.modMediaSource':
+                foreach ($modx->getIterator('sources.modMediaSource') as $object) {
+                    $classAttributes = $attributes;
+                    /** @var modMediaSource $object */
+                    if ($object->get('is_stream') && $object->initialize()) {
+                        $sourceBases = $object->getBases('');
+                        $source = $object->getBasePath();
+                        if (!$sourceBases['pathIsRelative'] && strpos($source, '://') === false) {
+                            $sourceBasePath = $source;
+                            if (strpos($source, $base_path) === 0) {
+                                $sourceBasePath = str_replace($base_path, '', $sourceBasePath);
+                                $classAttributes['resolve'][] = array(
+                                    'type' => 'php',
+                                    'source' => VAPOR_DIR . 'scripts/resolve.media_source.php',
+                                    'target' => $sourceBasePath,
+                                    'targetRelative' => true
+                                );
+                            } else {
+                                /* when coming from Windows sources, remove "{volume}:" */
+                                if (strpos($source, ':\\') !== false || strpos($source, ':/') !== false) {
+                                    $sourceBasePath = str_replace('\\', '/', substr($source, strpos($source, ':') + 1));
+                                }
+                                $target = 'dirname(MODX_BASE_PATH) . "/sources/' . ltrim(dirname($sourceBasePath), '/') . '/"';
+                                $classAttributes['resolve'][] = array(
+                                    'type' => 'file',
+                                    'source' => $source,
+                                    'target' => "return {$target};"
+                                );
+                                $classAttributes['resolve'][] = array(
+                                    'type' => 'php',
+                                    'source' => VAPOR_DIR . 'scripts/resolve.media_source.php',
+                                    'target' => $sourceBasePath,
+                                    'targetRelative' => false,
+                                    'targetPrepend' => "return dirname(MODX_BASE_PATH) . '/sources/';"
+                                );
+                            }
+                        }
+                    }
+                    if ($package->put($object, $classAttributes)) {
+                        $instances++;
+                    } else {
+                        $modx->log(modX::LOG_LEVEL_WARN, "Could not package {$class} instance with pk: " . print_r($object->getPrimaryKey()));
+                    }
+                }
+                $modx->log(modX::LOG_LEVEL_INFO, "Packaged {$instances} of {$class}");
+                continue 2;
             default:
                 break;
         }
@@ -403,7 +465,10 @@ try {
 
     if (is_array($extraTables) && !empty($extraTables)) {
         $modx->loadClass('vapor.vaporVehicle', VAPOR_DIR . 'model/', true, true);
+        $excludeExtraTablePrefix = isset($vaporOptions['excludeExtraTablePrefix']) && is_array($vaporOptions['excludeExtraTablePrefix']) ? $vaporOptions['excludeExtraTablePrefix'] : array();
+        $excludeExtraTables = isset($vaporOptions['excludeExtraTables']) && is_array($vaporOptions['excludeExtraTables']) ? $vaporOptions['excludeExtraTables'] : array();
         foreach ($extraTables as $extraTable) {
+            if (in_array($extraTable, $excludeExtraTables)) continue;
             if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
                 set_time_limit(0);
             }
@@ -419,6 +484,11 @@ try {
             $extraTableName = $extraTable;
             if (!empty($modxTablePrefix) && strpos($extraTableName, $modxTablePrefix) === 0) {
                 $extraTableName = substr($extraTableName, strlen($modxTablePrefix));
+                $addTablePrefix = true;
+            } elseif (!empty($modxTablePrefix) || in_array($extraTableName, $excludeExtraTablePrefix)) {
+                $addTablePrefix = false;
+            } else {
+                $addTablePrefix = true;
             }
             $object['tableName'] = $extraTableName;
             $modx->log(modX::LOG_LEVEL_INFO, "Extracting non-core table {$extraTableName}");
@@ -428,7 +498,9 @@ try {
             $resultSet = $stmt->fetch(PDO::FETCH_NUM);
             $stmt->closeCursor();
             if (isset($resultSet[1])) {
-                $object['table'] = str_replace("CREATE TABLE {$modx->escape($extraTable)}", "CREATE TABLE {$modx->escape('[[++table_prefix]]' . $extraTableName)}", $resultSet[1]);
+                if ($addTablePrefix) {
+                    $object['table'] = str_replace("CREATE TABLE {$modx->escape($extraTable)}", "CREATE TABLE {$modx->escape('[[++table_prefix]]' . $extraTableName)}", $resultSet[1]);
+                }
 
                 /* collect the rows and generate INSERT statements */
                 $object['data'] = array();
@@ -456,7 +528,11 @@ try {
                         }
                     }
                     $values = implode(', ', $values);
-                    $object['data'][] = "INSERT INTO {$modx->escape('[[++table_prefix]]' . $extraTableName)} ({$fields}) VALUES ({$values})";
+                    if ($addTablePrefix) {
+                        $object['data'][] = "INSERT INTO {$modx->escape('[[++table_prefix]]' . $extraTableName)} ({$fields}) VALUES ({$values})";
+                    } else {
+                        $object['data'][] = "INSERT INTO {$modx->escape($extraTable)} ({$fields}) VALUES ({$values})";
+                    }
                     $instances++;
                 }
             }

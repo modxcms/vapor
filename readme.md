@@ -33,6 +33,30 @@ To create a MODX Cloud-compatible snapshot of your MODX site via CLI, navigate t
 
     http://localhost/revo/vapor/vapor.php
 
+### Custom Options
+
+There are a few options available for customizing the execution of Vapor. You can define these options by creating a `VAPOR_DIR . 'config.php'` file with the following contents:
+
+```php
+<?php
+return array(
+    'excludeFiles' => array(),
+    'excludeExtraTables' => array(),
+    'excludeExtraTablePrefix' => array(),
+);
+```
+
+- __excludeFiles__ &mdash; An array of file/directory names (do not include the trailing / on directory names) to exclude from the `MODX_BASE_PATH`. Normally Vapor would package up any non-core files located within your `MODX_BASE_PATH`. Define specific items you want to skip here.
+- __excludeExtraTables__ &mdash; An array of non-core tables to exclude from your database. Normally Vapor will package any non-core tables in the database.
+- __excludeExtraTablePrefix__ &mdash; An array of non-core tables to not prepend with your MODX `table_prefix`. Normally, Vapor will keep track of which non-core tables need to have a table_prefix prepended when Injected into the target MODX site, but if the source MODX site does not define a `table_prefix`, Vapor has to assume all of them will need the target's `table_prefix`. Define specific tables that should not get the target's `table_prefix` upon Injection here if your source database does not use a `table_prefix`. _This is not necessary if the source does define a `table_prefix`._
+
+
+## Troubleshooting
+
+### Review the Vapor log
+
+Each time you run vapor it will log information about it's execution into a file with the same timestamp as the zip file that gets created (i.e. the server time when vapor is run). This file will be in the format `vapor-{timestamp}.log` and located in your logs directory at `{core_path}cache/logs/` (or `{core_path}cache/{MODX_CONFIG_KEY}/logs` if using a custom MODX_CONFIG_KEY value).
+
 
 ## Copyright
 

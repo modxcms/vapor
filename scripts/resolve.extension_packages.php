@@ -21,14 +21,14 @@
 /**
  * @var xPDOTransport $transport
  * @var modSystemSetting $object
- * @var array $options
+ * @var array $fileMeta
  */
 if ($object instanceof modSystemSetting && $object->get('key') === 'extension_packages') {
     $extPackages = $object->get('value');
     $extPackages = $transport->xpdo->fromJSON($extPackages);
     if (!is_array($extPackages)) $extPackages = array();
-    if (is_array($options) && array_key_exists('extension_packages', $options)) {
-        $optPackages = $transport->xpdo->fromJSON($options['extension_packages']);
+    if (is_array($fileMeta) && array_key_exists('extension_packages', $fileMeta)) {
+        $optPackages = $transport->xpdo->fromJSON($fileMeta['extension_packages']);
         if (is_array($optPackages)) {
             $extPackages = array_merge($extPackages, $optPackages);
         }
