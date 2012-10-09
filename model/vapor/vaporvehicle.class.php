@@ -54,8 +54,10 @@ class vaporVehicle extends xPDOVehicle {
         if (isset($vOptions['object']) && isset($vOptions['object']['tableName']) && isset($vOptions['object']['table']) && isset($vOptions['object']['data'])) {
             $tableName = $vOptions['object']['tableName'];
             /* attempt to execute the drop table if exists script */
-            $dropTableQuery = "DROP TABLE IF EXISTS {$transport->xpdo->escape($transport->xpdo->getOption('table_prefix', $options, '') . $tableName)}";
-            $tableDropped = $transport->xpdo->exec($dropTableQuery);
+            $dropTableQuery = isset($vOptions['object']['drop']) && !empty($vOptions['object']['drop'])
+                ? $vOptions['object']['drop']
+                : "DROP TABLE IF EXISTS {$transport->xpdo->escape('[[++table_prefix]]' . $tableName)}";
+            $tableDropped = $transport->xpdo->exec(str_replace("[[++table_prefix]]", $transport->xpdo->getOption('table_prefix', $options, ''), $dropTableQuery));
             if ($tableDropped === false) {
                 $transport->xpdo->log(xPDO::LOG_LEVEL_WARN, "Error executing drop table script for table {$tableName}:\n{$dropTableQuery}");
             }

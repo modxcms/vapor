@@ -1,5 +1,9 @@
 # MODX Vapor Changelog
 
+## 1.0.0-beta-5 (October 9, 2012)
+
+- [#8871](http://tracker.modx.com/issues/8871) Fix drop table statement in vaporVehicles to respect table_prefix properly
+
 ## 1.0.0-beta-4 (October 8, 2012)
 
 - [#8817](http://tracker.modx.com/issues/8817) Fix media source import via resolvers
