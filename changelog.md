@@ -1,5 +1,7 @@
 # MODX Vapor Changelog
 
+- [#8975](http://tracker.modx.com/issues/8975) Fix case in SQL for selecting non-core tables
+
 ## 1.0.0-beta-5 (October 9, 2012)
 
 - [#8871](http://tracker.modx.com/issues/8871) Fix drop table statement in vaporVehicles to respect table_prefix properly
