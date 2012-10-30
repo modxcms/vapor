@@ -258,6 +258,13 @@ try {
         ),
         array(
             'vehicle_class' => 'xPDOFileVehicle',
+            'validate' => array(
+                array(
+                    'type' => 'php',
+                    'source' => VAPOR_DIR . 'scripts/validate.truncate_tables.php',
+                    'classes' => $classes
+                ),
+            ),
             'resolve' => array(
                 array(
                     'type' => 'php',
@@ -309,13 +316,6 @@ try {
         $object->set('value', $modx->toJSON($extPackages));
         $package->put($object, array_merge($attributes,
             array(
-                'validate' => array(
-                    array(
-                        'type' => 'php',
-                        'source' => VAPOR_DIR . 'scripts/validate.truncate_tables.php',
-                        'classes' => $classes
-                    ),
-                ),
                 'resolve' => array(
                     array(
                         'type' => 'php',
@@ -460,7 +460,7 @@ try {
         $coreTables[$class] = $modx->quote($modx->literal($modx->getTableName($class)));
     }
 
-    $stmt = $modx->query("SELECT table_name FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '{$modxDatabase}' AND table_name NOT IN (" . implode(',', $coreTables) . ")");
+    $stmt = $modx->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = '{$modxDatabase}' AND TABLE_NAME NOT IN (" . implode(',', $coreTables) . ")");
     $extraTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
     if (is_array($extraTables) && !empty($extraTables)) {
