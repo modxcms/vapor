@@ -258,6 +258,13 @@ try {
         ),
         array(
             'vehicle_class' => 'xPDOFileVehicle',
+            'validate' => array(
+                array(
+                    'type' => 'php',
+                    'source' => VAPOR_DIR . 'scripts/validate.truncate_tables.php',
+                    'classes' => $classes
+                ),
+            ),
             'resolve' => array(
                 array(
                     'type' => 'php',
@@ -309,13 +316,6 @@ try {
         $object->set('value', $modx->toJSON($extPackages));
         $package->put($object, array_merge($attributes,
             array(
-                'validate' => array(
-                    array(
-                        'type' => 'php',
-                        'source' => VAPOR_DIR . 'scripts/validate.truncate_tables.php',
-                        'classes' => $classes
-                    ),
-                ),
                 'resolve' => array(
                     array(
                         'type' => 'php',

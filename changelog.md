@@ -1,5 +1,6 @@
 # MODX Vapor Changelog
 
+- Fix missing table truncation script when no extension_packages setting exists
 - [#8975](http://tracker.modx.com/issues/8975) Fix case in SQL for selecting non-core tables
 
 ## 1.0.0-beta-5 (October 9, 2012)
