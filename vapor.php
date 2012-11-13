@@ -35,7 +35,7 @@ try {
     include dirname(dirname(__FILE__)) . '/config.core.php';
     include MODX_CORE_PATH . 'model/modx/modx.class.php';
 
-    if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+    if (!ini_get('safe_mode')) {
         set_time_limit(0);
     }
 
@@ -256,7 +256,7 @@ try {
         }
     }
 
-    if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+    if (!ini_get('safe_mode')) {
         set_time_limit(0);
     }
 
@@ -339,7 +339,7 @@ try {
 
     /* loop through the classes and package the objects */
     foreach ($classes as $class) {
-        if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+        if (!ini_get('safe_mode')) {
             set_time_limit(0);
         }
 
@@ -480,7 +480,7 @@ try {
         $excludeExtraTables = isset($vaporOptions['excludeExtraTables']) && is_array($vaporOptions['excludeExtraTables']) ? $vaporOptions['excludeExtraTables'] : array();
         foreach ($extraTables as $extraTable) {
             if (in_array($extraTable, $excludeExtraTables)) continue;
-            if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+            if (!ini_get('safe_mode')) {
                 set_time_limit(0);
             }
 
@@ -560,7 +560,7 @@ try {
         }
     }
 
-    if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+    if (!ini_get('safe_mode')) {
         set_time_limit(0);
     }
 
