@@ -19,6 +19,7 @@
  */
 $startTime = microtime(true);
 define('VAPOR_DIR', realpath(dirname(__FILE__)) . '/');
+define('VAPOR_VERSION', '1.1.0-dev');
 try {
     $vaporOptions = array(
         'excludeExtraTablePrefix' => array(),
