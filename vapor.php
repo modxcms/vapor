@@ -74,6 +74,9 @@ try {
     $modx->setOption(xPDO::OPT_SETUP, true);
     $modx->setDebug(-1);
 
+    $modxSettingsVersion = $modx->getOption('settings_version', null, '');
+    $modxSettingsDistro = $modx->getOption('settings_distro', null, '');
+
     $modxDatabase = $modx->getOption('dbname', $options, $modx->getOption('database', $options));
     $modxTablePrefix = $modx->getOption('table_prefix', $options, '');
 
@@ -82,10 +85,17 @@ try {
     $manager_path = realpath($modx->getOption('manager_path', $options, MODX_MANAGER_PATH)) . '/';
     $base_path = realpath($modx->getOption('base_path', $options, MODX_BASE_PATH)) . '/';
 
-    $modx->log(modX::LOG_LEVEL_INFO, "core_path=" . $core_path);
-    $modx->log(modX::LOG_LEVEL_INFO, "assets_path=" . $assets_path);
-    $modx->log(modX::LOG_LEVEL_INFO, "manager_path=" . $manager_path);
-    $modx->log(modX::LOG_LEVEL_INFO, "base_path=" . $base_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "Vapor version: " . VAPOR_VERSION);
+    $modx->log(modX::LOG_LEVEL_INFO, "Vapor options: " . print_r($vaporOptions, true));
+    $modx->log(modX::LOG_LEVEL_INFO, "PHP version: " . PHP_VERSION);
+
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX core version: " . $modxVersion);
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX settings_version: " . $modxSettingsVersion);
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX settings_distro: " . $modxSettingsDistro);
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX core_path: " . $core_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX assets_path: " . $assets_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX manager_path: " . $manager_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX base_path: " . $base_path);
 
     $modx->loadClass('transport.modPackageBuilder', '', false, true);
     $builder = new modPackageBuilder($modx);
