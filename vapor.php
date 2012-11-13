@@ -106,7 +106,7 @@ try {
         $modx->log(modX::LOG_LEVEL_FATAL, "no workspace!");
     }
 
-    if (!defined('PKG_NAME')) define('PKG_NAME', $modx->getOption('http_host', $options, 'cloud_import'));
+    if (!defined('PKG_NAME')) define('PKG_NAME', str_replace(array('-', '.'), array('_', '_'), $modx->getOption('http_host', $options, 'vapor_export')));
     define('PKG_VERSION', strftime("%y%m%d.%H%M.%S", $startTime));
     define('PKG_RELEASE', $modxVersion);
 
