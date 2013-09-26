@@ -29,7 +29,7 @@ _NOTE: The `vapor/` subdirectory is the `VAPOR_DIR`_
 
 ### Running via Browser
 
-To create a MODX Cloud-compatible snapshot of your MODX site via CLI, navigate to `MODX_SITE_URL . VAPOR_DIR . 'vapor.php'` in your browser and wait for the process to complete, e.g.
+To create a MODX Cloud-compatible snapshot of your MODX site via your browser, navigate to `MODX_SITE_URL . VAPOR_DIR . 'vapor.php'` in your browser and wait for the process to complete, e.g.
 
     http://localhost/revo/vapor/vapor.php
 
@@ -60,4 +60,4 @@ Each time you run vapor it will log information about it's execution into a file
 
 ## Copyright
 
-MODX Vapor is Copyright 2012 by MODX, LLC.
+MODX Vapor is Copyright 2012-2013 by MODX, LLC.
