@@ -19,6 +19,7 @@
  */
 $startTime = microtime(true);
 define('VAPOR_DIR', realpath(dirname(__FILE__)) . '/');
+define('VAPOR_VERSION', '1.1.1-pl');
 try {
     $vaporOptions = array(
         'excludeExtraTablePrefix' => array(),
@@ -34,7 +35,7 @@ try {
     include dirname(dirname(__FILE__)) . '/config.core.php';
     include MODX_CORE_PATH . 'model/modx/modx.class.php';
 
-    if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+    if (!ini_get('safe_mode')) {
         set_time_limit(0);
     }
 
@@ -73,6 +74,9 @@ try {
     $modx->setOption(xPDO::OPT_SETUP, true);
     $modx->setDebug(-1);
 
+    $modxSettingsVersion = $modx->getOption('settings_version', null, '');
+    $modxSettingsDistro = $modx->getOption('settings_distro', null, '');
+
     $modxDatabase = $modx->getOption('dbname', $options, $modx->getOption('database', $options));
     $modxTablePrefix = $modx->getOption('table_prefix', $options, '');
 
@@ -81,10 +85,17 @@ try {
     $manager_path = realpath($modx->getOption('manager_path', $options, MODX_MANAGER_PATH)) . '/';
     $base_path = realpath($modx->getOption('base_path', $options, MODX_BASE_PATH)) . '/';
 
-    $modx->log(modX::LOG_LEVEL_INFO, "core_path=" . $core_path);
-    $modx->log(modX::LOG_LEVEL_INFO, "assets_path=" . $assets_path);
-    $modx->log(modX::LOG_LEVEL_INFO, "manager_path=" . $manager_path);
-    $modx->log(modX::LOG_LEVEL_INFO, "base_path=" . $base_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "Vapor version: " . VAPOR_VERSION);
+    $modx->log(modX::LOG_LEVEL_INFO, "Vapor options: " . print_r($vaporOptions, true));
+    $modx->log(modX::LOG_LEVEL_INFO, "PHP version: " . PHP_VERSION);
+
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX core version: " . $modxVersion);
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX settings_version: " . $modxSettingsVersion);
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX settings_distro: " . $modxSettingsDistro);
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX core_path: " . $core_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX assets_path: " . $assets_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX manager_path: " . $manager_path);
+    $modx->log(modX::LOG_LEVEL_INFO, "MODX base_path: " . $base_path);
 
     $modx->loadClass('transport.modPackageBuilder', '', false, true);
     $builder = new modPackageBuilder($modx);
@@ -95,7 +106,7 @@ try {
         $modx->log(modX::LOG_LEVEL_FATAL, "no workspace!");
     }
 
-    if (!defined('PKG_NAME')) define('PKG_NAME', $modx->getOption('http_host', $options, 'cloud_import'));
+    if (!defined('PKG_NAME')) define('PKG_NAME', str_replace(array('-', '.'), array('_', '_'), $modx->getOption('http_host', $options, 'vapor_export')));
     define('PKG_VERSION', strftime("%y%m%d.%H%M.%S", $startTime));
     define('PKG_RELEASE', $modxVersion);
 
@@ -245,7 +256,7 @@ try {
         }
     }
 
-    if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+    if (!ini_get('safe_mode')) {
         set_time_limit(0);
     }
 
@@ -328,7 +339,7 @@ try {
 
     /* loop through the classes and package the objects */
     foreach ($classes as $class) {
-        if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+        if (!ini_get('safe_mode')) {
             set_time_limit(0);
         }
 
@@ -461,7 +472,13 @@ try {
     }
 
     $stmt = $modx->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = '{$modxDatabase}' AND TABLE_NAME NOT IN (" . implode(',', $coreTables) . ")");
-    $extraTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $extraTables = null;
+    if (
+        is_object($stmt)
+        && $stmt instanceof \PDOStatement
+    ) {
+        $extraTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
 
     if (is_array($extraTables) && !empty($extraTables)) {
         $modx->loadClass('vapor.vaporVehicle', VAPOR_DIR . 'model/', true, true);
@@ -469,7 +486,7 @@ try {
         $excludeExtraTables = isset($vaporOptions['excludeExtraTables']) && is_array($vaporOptions['excludeExtraTables']) ? $vaporOptions['excludeExtraTables'] : array();
         foreach ($extraTables as $extraTable) {
             if (in_array($extraTable, $excludeExtraTables)) continue;
-            if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+            if (!ini_get('safe_mode')) {
                 set_time_limit(0);
             }
 
@@ -549,7 +566,7 @@ try {
         }
     }
 
-    if (!XPDO_CLI_MODE && !ini_get('safe_mode')) {
+    if (!ini_get('safe_mode')) {
         set_time_limit(0);
     }
 
