@@ -19,7 +19,7 @@
  */
 $startTime = microtime(true);
 define('VAPOR_DIR', realpath(dirname(__FILE__)) . '/');
-define('VAPOR_VERSION', '1.1.0-dev');
+define('VAPOR_VERSION', '1.1.1-pl');
 try {
     $vaporOptions = array(
         'excludeExtraTablePrefix' => array(),
@@ -472,7 +472,13 @@ try {
     }
 
     $stmt = $modx->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = '{$modxDatabase}' AND TABLE_NAME NOT IN (" . implode(',', $coreTables) . ")");
-    $extraTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $extraTables = null;
+    if (
+        is_object($stmt)
+        && $stmt instanceof \PDOStatement
+    ) {
+        $extraTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
 
     if (is_array($extraTables) && !empty($extraTables)) {
         $modx->loadClass('vapor.vaporVehicle', VAPOR_DIR . 'model/', true, true);

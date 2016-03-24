@@ -1,5 +1,14 @@
 # MODX Vapor Changelog
 
+## 1.1.1-pl (March 24, 2016)
+
+- Additional error handling
+
+## 1.1.0-dev
+
+- Fix package signatures
+- Additional information output to Vapor log
+
 ## 1.0.0-pl (October 30, 2012)
 
 - Fix missing table truncation script when no extension_packages setting exists
