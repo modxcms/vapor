@@ -1,6 +1,6 @@
 # MODX Vapor
 
-This is MODX Vapor, a PHP script for Extracting a complete snapshot of a MODX site, including it's file and database artifacts for use in importing the site into MODX Cloud.
+This is MODX Vapor, a PHP script for Extracting a complete snapshot of a MODX site, including its file and database artifacts for use in importing the site into MODX Cloud.
 
 
 ## Environment Requirements
